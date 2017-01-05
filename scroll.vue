@@ -3,19 +3,19 @@
         @touchstart="_touchstart($event)"
         @touchmove="_touchmove($event)"
         @touchend="_touchend($event)"
-    >
+        @scroll="_scroll($event)"
+    ref="vueScroll">
         <div class="scroll-inner" 
         :style="{
             transform:'translate3d(0,'+top+'px,0)',
-            marginTop:-offsetH+'px'
         }"
         :class="{'scroll-to-top':!touching}"
-        >
-            <div class="pull-to-refresh" v-if="!!refresh">
-                <slot name='refresh' :style="{
+        ref="scrollInner">
+            <div class="pull-to-refresh" v-if="!!refresh" :style="{
                     'height':offsetH+'px',
                     'line-height':offsetH+'px'
-                }" class="refresh">
+                }">
+                <slot name='refresh' class="refresh">
                     <span :class="{
                         'icon-down-background':state==0,
                         'icon-up-background':state==1,
@@ -28,6 +28,15 @@
                 </slot>
             </div>
             <slot></slot>
+            <div class="push-to-refresh" v-if="bottomRefresh" :style="{
+                    'height':bottomH+'px',
+                    'line-height':bottomH+'px'
+                }"  >
+                <slot name='bottomScroll' class="bt-scroll">
+                    <span class="icon-loading"></span>
+                    <span>正在刷新...</span>
+                </slot>
+            </div>
         </div>
     </div>
 </template>
@@ -35,15 +44,25 @@
     
     export default {
         props:{
-            //加载函数
+            //下拉刷新函数
             refresh:{
                 type:Function,
                 default:undefined
             },
-            //加载中的高度
+            //下拉加载中的高度
             offsetH:{
                 type:Number,
                 default:44
+            },
+            //底部加载
+            bottomRefresh:{
+                type:Function,
+                default:undefined
+            },
+            //底部加载中高度
+            bottomH:{
+                type:Number,
+                default:40
             },
         },
         data () {
@@ -87,6 +106,7 @@
                     this.top=0
                 }
             },
+            //下拉刷新
             loading(){
                 this.state=2;
                 this.top=this.offsetH;
@@ -94,6 +114,16 @@
                     this.state=0;
                     this.top=0
                 })
+            },
+            _scroll(e){
+                if(!this.bottomRefresh){
+                    return
+                }
+                let outerHeight = this.$refs.vueScroll.clientHeight;
+                let innerHeight = this.$refs.scrollInner.clientHeight;
+                if(innerHeight-outerHeight <= this.$el.scrollTop){
+                    this.bottomRefresh()
+                }
             }
         }
     }
@@ -101,10 +131,10 @@
 <style scoped>
     .vue-scroll{position: absolute;width:100%;height: 100%;overflow-y: scroll;}
     .scroll-inner{position:absolute;overflow-x: hidden;overflow-y: auto;width:100%;}
-    .icon-down-background{display:inline-block;width: 20px;height: 20px;background: no-repeat 50%;background-image:url('../assets/img/test/down.png');background-size:16px;vertical-align: middle;-webkit-transition-duration: .3s;transition-duration: .3s;}
-    .icon-up-background{display:inline-block;width: 20px;height: 20px;background: no-repeat 50%;background-image:url('../assets/img/test/down.png');background-size:16px;vertical-align: middle;transform:rotate(180deg);-webkit-transition-duration: .3s;transition-duration: .3s;}
-    .pull-to-refresh{width:100%;height: 40px;line-height: 40px;color:#a1a1a1;text-align: center;}
+    .icon-down-background{display:inline-block;width: 20px;height: 20px;background: no-repeat 50%;background-image:url('../assets/img/test/load-down.png');background-size:16px;vertical-align: middle;-webkit-transition-duration: .3s;transition-duration: .3s;}
+    .icon-up-background{display:inline-block;width: 20px;height: 20px;background: no-repeat 50%;background-image:url('../assets/img/test/load-down.png');background-size:16px;vertical-align: middle;transform:rotate(180deg);-webkit-transition-duration: .3s;transition-duration: .3s;}
+    .pull-to-refresh{width:100%;color:#a1a1a1;text-align: center;}
     .scroll-to-top{-webkit-transition-duration: .3s;transition-duration: .3s;}
     .icon-loading{display:inline-block;width: 20px;height: 20px;background: no-repeat 50%;background-image:url('../assets/img/test/loading.png');background-size:20px;vertical-align: middle;-webkit-animation: loadingCircle 1s infinite linear;animation: loadingCircle 1s infinite linear;}
-
+    .push-to-refresh{text-align: center;}
 </style>
